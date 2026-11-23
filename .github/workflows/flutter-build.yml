@@ -69,7 +69,7 @@ jobs:
       with:
         submodules: recursive
         persist-credentials: false
-    - name: Load pinned source and Khavaran changes
+    - name: Load pinned source and Fanoos changes
       shell: bash
       run: python build/bootstrap.py
     - name: Restore bridge files

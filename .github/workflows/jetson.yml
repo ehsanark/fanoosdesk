@@ -1,4 +1,4 @@
-name: Build Khavaran Desk Jetson ARM64
+name: Build Fanoos Desk Jetson ARM64
 
 permissions:
   contents: read
@@ -20,9 +20,12 @@ on:
       - ".github/workflows/bridge.yml"
       - "build/bootstrap.py"
       - "build/redesign.py"
-      - "build/khavaran.patch"
+      - "build/fanoos.patch"
       - "build/identity.patch"
-      - "build/icon.b64"
+      - "build/fanoos.png"
+      - "build/fanoos.ico"
+      - "build/defaults.py"
+      - "build/server-defaults.json"
 
 jobs:
   generate-bridge:
@@ -52,12 +55,12 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y nasm
 
-      - name: Checkout Khavaran build repository
+      - name: Checkout Fanoos build repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           persist-credentials: false
 
-      - name: Load pinned RustDesk source and Khavaran changes
+      - name: Load pinned RustDesk source and Fanoos changes
         shell: bash
         run: python build/bootstrap.py
 
@@ -137,7 +140,7 @@ jobs:
           fi
           head -n 100 "$VCPKG_ROOT/buildtrees/ffmpeg/build-arm64-linux-rel-out.log" || true
 
-      - name: Build Khavaran Desk ARM64
+      - name: Build Fanoos Desk ARM64
         id: build
         uses: rustdesk-org/run-on-arch-action@d3fcfbb632b84cf7f6bc772bfaaa2c2f4f8789a8
         with:
@@ -223,18 +226,18 @@ jobs:
         shell: bash
         run: |
           test -f rustdesk-jetson-aarch64.deb
-          cp rustdesk-jetson-aarch64.deb KhavaranDesk-Client-Jetson-Orin-Nano-arm64.deb
-          sha256sum KhavaranDesk-Client-Jetson-Orin-Nano-arm64.deb > KhavaranDesk-Client-Jetson-Orin-Nano-arm64.deb.sha256
-          dpkg-deb --info KhavaranDesk-Client-Jetson-Orin-Nano-arm64.deb
-          ls -lh KhavaranDesk-Client-Jetson-Orin-Nano-arm64.deb*
+          cp rustdesk-jetson-aarch64.deb FanoosDesk-Client-Jetson-Orin-Nano-arm64.deb
+          sha256sum FanoosDesk-Client-Jetson-Orin-Nano-arm64.deb > FanoosDesk-Client-Jetson-Orin-Nano-arm64.deb.sha256
+          dpkg-deb --info FanoosDesk-Client-Jetson-Orin-Nano-arm64.deb
+          ls -lh FanoosDesk-Client-Jetson-Orin-Nano-arm64.deb*
 
       - name: Upload Jetson installer
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: KhavaranDesk-Client-Jetson-Orin-Nano-arm64
+          name: FanoosDesk-Client-Jetson-Orin-Nano-arm64
           path: |
-            KhavaranDesk-Client-Jetson-Orin-Nano-arm64.deb
-            KhavaranDesk-Client-Jetson-Orin-Nano-arm64.deb.sha256
+            FanoosDesk-Client-Jetson-Orin-Nano-arm64.deb
+            FanoosDesk-Client-Jetson-Orin-Nano-arm64.deb.sha256
           if-no-files-found: error
 
 
@@ -250,7 +253,7 @@ jobs:
       - name: Download Jetson client artifact
         uses: actions/download-artifact@v4
         with:
-          name: KhavaranDesk-Client-Jetson-Orin-Nano-arm64
+          name: FanoosDesk-Client-Jetson-Orin-Nano-arm64
           path: dist
 
       - name: Verify and publish Jetson client
@@ -263,16 +266,16 @@ jobs:
         run: |
           set -euo pipefail
           cd dist
-          sha256sum --check KhavaranDesk-Client-Jetson-Orin-Nano-arm64.deb.sha256
+          sha256sum --check FanoosDesk-Client-Jetson-Orin-Nano-arm64.deb.sha256
           tag="client-jetson-build-${BUILD_NUMBER}"
 
           cat > release-notes.md <<'EOF'
-          Khavaran Desk Client for NVIDIA Jetson Orin Nano / Linux ARM64
+          Fanoos Desk Client for NVIDIA Jetson Orin Nano / Linux ARM64
 
           - ARM64 Debian package
           - Persian-first UI with real RTL layout
           - visible ID/Relay server setup on the main screen
-          - compatible with the same Khavaran Desk Server used by Windows clients
+          - compatible with the same Fanoos Desk Server used by Windows clients
 
           Configure ID Server and Relay Server with the public VPS hostname/IP,
           leave API Server blank for OSS, and use the server public key.
@@ -284,12 +287,12 @@ jobs:
           if ! gh release view "$tag" >/dev/null 2>&1; then
             gh release create "$tag" \
               --target "$BUILD_SHA" \
-              --title "Khavaran Desk Client — Jetson Orin Nano ARM64 build ${BUILD_NUMBER}" \
+              --title "Fanoos Desk Client — Jetson Orin Nano ARM64 build ${BUILD_NUMBER}" \
               --notes-file release-notes.md \
               --prerelease
           fi
 
           gh release upload "$tag" \
-            KhavaranDesk-Client-Jetson-Orin-Nano-arm64.deb \
-            KhavaranDesk-Client-Jetson-Orin-Nano-arm64.deb.sha256 \
+            FanoosDesk-Client-Jetson-Orin-Nano-arm64.deb \
+            FanoosDesk-Client-Jetson-Orin-Nano-arm64.deb.sha256 \
             --clobber

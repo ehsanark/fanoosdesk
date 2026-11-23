@@ -1,19 +1,19 @@
-# Khavaran Desk Server
+# Fanoos Desk Server
 
-بسته سرور خاوران دسک بر پایه RustDesk Server OSS ساخته می‌شود. باینری‌های `hbbs` و `hbbr` از Release رسمی RustDesk Server دریافت و SHA256 آن‌ها در GitHub Actions بررسی می‌شود؛ بسته خاوران نصب، سرویس‌های systemd و ابزار مدیریت را اضافه می‌کند.
+بسته سرور فانوس دسک بر پایه RustDesk Server OSS ساخته می‌شود. باینری‌های `hbbs` و `hbbr` از Release رسمی RustDesk Server دریافت و SHA256 آن‌ها در GitHub Actions بررسی می‌شود؛ بسته فانوس نصب، سرویس‌های systemd و ابزار مدیریت را اضافه می‌کند.
 
 ## خروجی‌ها
 
-- `KhavaranDesk-Server-Linux-x64.tar.gz` برای Linux x86_64 / amd64
-- `KhavaranDesk-Server-Linux-ARM64.tar.gz` برای Linux ARM64 و Jetson Orin
+- `FanoosDesk-Server-Linux-x64.tar.gz` برای Linux x86_64 / amd64
+- `FanoosDesk-Server-Linux-ARM64.tar.gz` برای Linux ARM64 و Jetson Orin
 
 نسخه بسته در `VERSION` و نسخه بالادستی RustDesk Server در `UPSTREAM_VERSION` پین شده است.
 
 ## نصب
 
 ```bash
-tar -xzf KhavaranDesk-Server-Linux-x64.tar.gz
-cd KhavaranDesk-Server-Linux-x64
+tar -xzf FanoosDesk-Server-Linux-x64.tar.gz
+cd FanoosDesk-Server-Linux-x64
 sudo ./install.sh
 ```
 
@@ -22,19 +22,19 @@ sudo ./install.sh
 بعد از نصب:
 
 ```bash
-sudo khavaran-server info
-sudo khavaran-server status
-sudo khavaran-server key
+sudo fanoos-server info
+sudo fanoos-server status
+sudo fanoos-server key
 ```
 
-## تنظیم کلاینت خاوران
+## تنظیم کلاینت فانوس
 
 در بخش «تعریف و معرفی سرور» کلاینت:
 
 - **ID Server:** دامنه یا IP عمومی همین سرور
 - **Relay Server:** دامنه یا IP عمومی همین سرور
 - **API Server:** در نسخه OSS خالی بماند
-- **Key:** خروجی `sudo khavaran-server key`
+- **Key:** خروجی `sudo fanoos-server key`
 
 ## پورت‌های فایروال
 
@@ -57,7 +57,7 @@ sudo ufw allow 21116/udp
 فایل زیر بعد از نصب ایجاد می‌شود:
 
 ```
-/etc/khavarandesk-server/server.env
+/etc/fanoosdesk-server/server.env
 ```
 
 برای نمونه، اگر Relay روی یک نام دامنه مشخص قرار دارد:
@@ -71,7 +71,7 @@ RUST_LOG=info
 سپس:
 
 ```bash
-sudo khavaran-server restart
+sudo fanoos-server restart
 ```
 
 ## داده‌ها و کلیدها
@@ -79,7 +79,7 @@ sudo khavaran-server restart
 پایگاه داده و کلیدهای سرور در مسیر زیر نگهداری می‌شوند:
 
 ```
-/var/lib/khavarandesk-server
+/var/lib/fanoosdesk-server
 ```
 
 در حذف عادی این پوشه پاک نمی‌شود تا IDها و کلیدها از بین نروند. برای حذف کامل:
@@ -90,12 +90,12 @@ sudo ./uninstall.sh --purge
 
 ## منبع و مجوز
 
-Khavaran Desk Server از RustDesk Server OSS استفاده می‌کند و مجوز AGPL-3.0 و اعلان‌های کپی‌رایت بالادستی حفظ می‌شوند.
+Fanoos Desk Server از RustDesk Server OSS استفاده می‌کند و مجوز AGPL-3.0 و اعلان‌های کپی‌رایت بالادستی حفظ می‌شوند.
 
 
 ## مهاجرت از RustDesk Server موجود
 
-اگر روی VPS از قبل RustDesk Server OSS در مسیر استاندارد `/var/lib/rustdesk-server` نصب باشد، نصب‌کننده Khavaran Desk Server در صورتی که هنوز هویت جدیدی ساخته نشده باشد، این موارد را به‌صورت کپی حفظ می‌کند:
+اگر روی VPS از قبل RustDesk Server OSS در مسیر استاندارد `/var/lib/rustdesk-server` نصب باشد، نصب‌کننده Fanoos Desk Server در صورتی که هنوز هویت جدیدی ساخته نشده باشد، این موارد را به‌صورت کپی حفظ می‌کند:
 
 - `id_ed25519`
 - `id_ed25519.pub`

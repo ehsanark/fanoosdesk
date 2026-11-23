@@ -1,0 +1,138 @@
+diff --git a/flutter/lib/common.dart b/flutter/lib/common.dart
+index b80e0b5..2c30bfb 100644
+--- a/flutter/lib/common.dart
++++ b/flutter/lib/common.dart
+@@ -249,7 +249,7 @@ class MyTheme {
+   MyTheme._();
+ 
+   static const Color grayBg = Color(0xFFEFEFF2);
+-  static const Color accent = Color(0xFF0071FF);
++  static const Color accent = Color(0xFFAB390F);
+   static const Color accent50 = Color(0x770071FF);
+   static const Color accent80 = Color(0xAA0071FF);
+   static const Color canvasColor = Color(0xFF212121);
+@@ -3819,7 +3819,22 @@ class _LogoState extends State<_Logo> {
+ }
+ 
+ // max 300 x 60
+-Widget loadLogo() => const _Logo();
++Widget loadLogo() => Container(
++  margin: const EdgeInsets.fromLTRB(12, 16, 12, 16),
++  padding: const EdgeInsets.all(16),
++  decoration: BoxDecoration(
++    color: const Color(0xFFAB390F).withOpacity(0.10),
++    borderRadius: BorderRadius.circular(18),
++  ),
++  child: Row(mainAxisSize: MainAxisSize.min, children: [
++    Image.asset('assets/icon.png', width: 32, height: 32),
++    SizedBox(width: 12),
++    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
++      Text('فانوس دسک', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
++      Text('Fanoos Desk', style: TextStyle(fontSize: 12, color: Color(0xFFAB390F))),
++    ]),
++  ]),
++);
+ 
+ Widget loadIcon(double size) {
+   return Image.asset('assets/icon.png',
+diff --git a/flutter/lib/desktop/pages/desktop_home_page.dart b/flutter/lib/desktop/pages/desktop_home_page.dart
+index 6d370cb..f767a16 100644
+--- a/flutter/lib/desktop/pages/desktop_home_page.dart
++++ b/flutter/lib/desktop/pages/desktop_home_page.dart
+@@ -32,7 +32,7 @@ class DesktopHomePage extends StatefulWidget {
+   State<DesktopHomePage> createState() => _DesktopHomePageState();
+ }
+ 
+-const borderColor = Color(0xFF2F65BA);
++const borderColor = Color(0xFFAB390F);
+ 
+ class _DesktopHomePageState extends State<DesktopHomePage>
+     with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
+@@ -80,11 +80,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+     final isOutgoingOnly = bind.isOutgoingOnly();
+     final children = <Widget>[
+       if (!isOutgoingOnly) buildPresetPasswordWarning(),
+-      if (bind.isCustomClient())
+-        Align(
+-          alignment: Alignment.center,
+-          child: loadPowered(context),
+-        ),
+       Align(
+         alignment: Alignment.center,
+         child: loadLogo(),
+diff --git a/flutter/linux/CMakeLists.txt b/flutter/linux/CMakeLists.txt
+index 56a8dbb..794b0f0 100644
+--- a/flutter/linux/CMakeLists.txt
++++ b/flutter/linux/CMakeLists.txt
+@@ -7,7 +7,7 @@ project(runner LANGUAGES C CXX)
+ set(BINARY_NAME "rustdesk")
+ # The unique GTK application identifier for this application. See:
+ # https://wiki.gnome.org/HowDoI/ChooseApplicationID
+-set(APPLICATION_ID "com.carriez.flutter_hbb")
++set(APPLICATION_ID "com.fanoosdesk.desktop")
+ 
+ # Explicitly opt into modern CMake behaviors to avoid warnings with recent
+ # versions of CMake.
+diff --git a/flutter/linux/my_application.cc b/flutter/linux/my_application.cc
+index 210adba..c988bda 100644
+--- a/flutter/linux/my_application.cc
++++ b/flutter/linux/my_application.cc
+@@ -142,11 +142,11 @@ static void my_application_activate(GApplication* application) {
+   if (use_header_bar) {
+     GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
+     gtk_widget_show(GTK_WIDGET(header_bar));
+-    gtk_header_bar_set_title(header_bar, "rustdesk");
++    gtk_header_bar_set_title(header_bar, "FanoosDesk");
+     gtk_header_bar_set_show_close_button(header_bar, TRUE);
+     gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
+   } else {
+-    gtk_window_set_title(window, "rustdesk");
++    gtk_window_set_title(window, "FanoosDesk");
+   }
+ 
+   // auto bdw = bitsdojo_window_from(window); // <--- add this line
+diff --git a/flutter/windows/runner/Runner.rc b/flutter/windows/runner/Runner.rc
+index 88d1854..4d7f4d5 100644
+--- a/flutter/windows/runner/Runner.rc
++++ b/flutter/windows/runner/Runner.rc
+@@ -90,12 +90,12 @@ BEGIN
+         BLOCK "040904e4"
+         BEGIN
+             VALUE "CompanyName", "Purslane Tech Pte. Ltd." "\0"
+-            VALUE "FileDescription", "RustDesk Remote Desktop" "\0"
++            VALUE "FileDescription", "Fanoos Desk Remote Desktop" "\0"
+             VALUE "FileVersion", VERSION_AS_STRING "\0"
+             VALUE "InternalName", "rustdesk" "\0"
+             VALUE "LegalCopyright", "Copyright © 2026 Purslane Tech Pte. Ltd. All rights reserved." "\0"
+             VALUE "OriginalFilename", "rustdesk.exe" "\0"
+-            VALUE "ProductName", "RustDesk" "\0"
++            VALUE "ProductName", "FanoosDesk" "\0"
+             VALUE "ProductVersion", VERSION_AS_STRING "\0"
+         END
+     END
+diff --git a/flutter/windows/runner/main.cpp b/flutter/windows/runner/main.cpp
+index 747d6f5..ea03905 100644
+--- a/flutter/windows/runner/main.cpp
++++ b/flutter/windows/runner/main.cpp
+@@ -80,7 +80,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
+         command_line_arguments.end());
+   }
+ 
+-  std::wstring app_name = L"RustDesk";
++  std::wstring app_name = L"FanoosDesk";
+   FUNC_RUSTDESK_GET_APP_NAME get_rustdesk_app_name = (FUNC_RUSTDESK_GET_APP_NAME)GetProcAddress(hInstance, "get_rustdesk_app_name");
+   if (get_rustdesk_app_name) {
+     wchar_t app_name_buffer[512] = {0};
+diff --git a/src/privacy_mode/win_topmost_window.rs b/src/privacy_mode/win_topmost_window.rs
+index b30db5f..90063f2 100644
+--- a/src/privacy_mode/win_topmost_window.rs
++++ b/src/privacy_mode/win_topmost_window.rs
+@@ -30,7 +30,7 @@ use winapi::{
+ pub(super) const PRIVACY_MODE_IMPL: &str = "privacy_mode_impl_mag";
+ 
+ pub const ORIGIN_PROCESS_EXE: &'static str = "C:\\Windows\\System32\\RuntimeBroker.exe";
+-pub const WIN_TOPMOST_INJECTED_PROCESS_EXE: &'static str = "RuntimeBroker_rustdesk.exe";
++pub const WIN_TOPMOST_INJECTED_PROCESS_EXE: &'static str = "RuntimeBroker_fanoosdesk.exe";
+ pub const INJECTED_PROCESS_EXE: &'static str = WIN_TOPMOST_INJECTED_PROCESS_EXE;
+ pub(super) const PRIVACY_WINDOW_CLASS: &'static str = "RustDeskPrivacyWindowClass";
+ pub(super) const PRIVACY_WINDOW_NAME: &'static str = "RustDeskPrivacyWindow";

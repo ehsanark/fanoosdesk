@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PREFIX="/opt/khavarandesk-server"
-STATE_DIR="/var/lib/khavarandesk-server"
-CONF_DIR="/etc/khavarandesk-server"
-SERVICE_USER="khavarandesk"
-SERVICE_GROUP="khavarandesk"
+PREFIX="/opt/fanoosdesk-server"
+STATE_DIR="/var/lib/fanoosdesk-server"
+CONF_DIR="/etc/fanoosdesk-server"
+SERVICE_USER="fanoosdesk"
+SERVICE_GROUP="fanoosdesk"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ ${EUID} -ne 0 ]]; then
@@ -15,7 +15,7 @@ fi
 
 for bin in hbbs hbbr; do
   if [[ ! -f "${SCRIPT_DIR}/bin/${bin}" ]]; then
-    echo "Missing ${SCRIPT_DIR}/bin/${bin}. Use an official Khavaran Desk Server release bundle." >&2
+    echo "Missing ${SCRIPT_DIR}/bin/${bin}. Use an official Fanoos Desk Server release bundle." >&2
     exit 1
   fi
 done
@@ -32,11 +32,11 @@ install -d -o "${SERVICE_USER}" -g "${SERVICE_GROUP}" -m 0750 "${STATE_DIR}"
 install -d -m 0755 "${CONF_DIR}"
 
 # Preserve an existing RustDesk Server OSS identity when migrating to
-# Khavaran Desk Server. The public key compiled into Khavaran clients only
+# Fanoos Desk Server. The public key compiled into Fanoos clients only
 # works when the server still owns the matching private key.
 LEGACY_STATE_DIR="/var/lib/rustdesk-server"
 if [[ ! -s "${STATE_DIR}/id_ed25519" && -s "${LEGACY_STATE_DIR}/id_ed25519" ]]; then
-  echo "Existing RustDesk server identity found; migrating it to Khavaran Desk..."
+  echo "Existing RustDesk server identity found; migrating it to Fanoos Desk..."
   install -o "${SERVICE_USER}" -g "${SERVICE_GROUP}" -m 0600 \
     "${LEGACY_STATE_DIR}/id_ed25519" "${STATE_DIR}/id_ed25519"
   if [[ -s "${LEGACY_STATE_DIR}/id_ed25519.pub" ]]; then
@@ -54,10 +54,10 @@ install -m 0755 "${SCRIPT_DIR}/bin/hbbr" "${PREFIX}/bin/hbbr"
 install -m 0644 "${SCRIPT_DIR}/VERSION" "${PREFIX}/VERSION"
 install -m 0644 "${SCRIPT_DIR}/UPSTREAM_VERSION" "${PREFIX}/UPSTREAM_VERSION"
 install -m 0644 "${SCRIPT_DIR}/LICENSE" "${PREFIX}/LICENSE"
-install -m 0755 "${SCRIPT_DIR}/khavaran-server" "/usr/local/bin/khavaran-server"
+install -m 0755 "${SCRIPT_DIR}/fanoos-server" "/usr/local/bin/fanoos-server"
 
-install -m 0644 "${SCRIPT_DIR}/systemd/khavaran-hbbs.service" "/etc/systemd/system/khavaran-hbbs.service"
-install -m 0644 "${SCRIPT_DIR}/systemd/khavaran-hbbr.service" "/etc/systemd/system/khavaran-hbbr.service"
+install -m 0644 "${SCRIPT_DIR}/systemd/fanoos-hbbs.service" "/etc/systemd/system/fanoos-hbbs.service"
+install -m 0644 "${SCRIPT_DIR}/systemd/fanoos-hbbr.service" "/etc/systemd/system/fanoos-hbbr.service"
 
 if [[ ! -f "${CONF_DIR}/server.env" ]]; then
   cat > "${CONF_DIR}/server.env" <<'EOF'
@@ -74,12 +74,12 @@ fi
 chown -R "${SERVICE_USER}:${SERVICE_GROUP}" "${STATE_DIR}"
 
 systemctl daemon-reload
-systemctl enable --now khavaran-hbbr.service
-systemctl enable --now khavaran-hbbs.service
+systemctl enable --now fanoos-hbbr.service
+systemctl enable --now fanoos-hbbs.service
 
 sleep 2
 failed=0
-for unit in khavaran-hbbr.service khavaran-hbbs.service; do
+for unit in fanoos-hbbr.service fanoos-hbbs.service; do
   if ! systemctl is-active --quiet "${unit}"; then
     echo "${unit} failed to start." >&2
     systemctl --no-pager --full status "${unit}" || true
@@ -96,8 +96,8 @@ for _ in {1..10}; do
 done
 
 echo
-echo "Khavaran Desk Server installed successfully."
-echo "Services: khavaran-hbbs, khavaran-hbbr"
+echo "Fanoos Desk Server installed successfully."
+echo "Services: fanoos-hbbs, fanoos-hbbr"
 echo "State:    ${STATE_DIR}"
 echo "Config:   ${CONF_DIR}/server.env"
 echo
@@ -113,7 +113,7 @@ if [[ -s "${STATE_DIR}/id_ed25519.pub" ]]; then
   echo -n "  Key:          "
   cat "${STATE_DIR}/id_ed25519.pub"
 else
-  echo "  Key:          run: sudo khavaran-server key"
+  echo "  Key:          run: sudo fanoos-server key"
 fi
 echo
-echo "Use 'sudo khavaran-server info' for a summary."
+echo "Use 'sudo fanoos-server info' for a summary."

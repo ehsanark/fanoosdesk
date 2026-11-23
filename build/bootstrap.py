@@ -1,8 +1,9 @@
 from pathlib import Path
-import tempfile,subprocess,shutil,base64
+import tempfile,subprocess,shutil,sys
+from defaults import render_defaults
 root=Path.cwd()
 commit='a7f2260203befb7e9c70b585219f0f0b5ca57703'
-with tempfile.TemporaryDirectory(prefix='khavaran-upstream-') as td:
+with tempfile.TemporaryDirectory(prefix='fanoos-upstream-') as td:
  source=Path(td)/'source';source.mkdir()
  def git(*args):subprocess.run(['git',*args],cwd=source,check=True)
  git('init');git('config','core.autocrlf','false');git('remote','add','origin','https://github.com/rustdesk/rustdesk.git')
@@ -19,12 +20,15 @@ with tempfile.TemporaryDirectory(prefix='khavaran-upstream-') as td:
   elif p.is_dir():
    shutil.copytree(p,root/p.name,dirs_exist_ok=True,ignore=shutil.ignore_patterns('.git'))
   else:shutil.copy2(p,root/p.name)
- subprocess.run(['git','apply','--check','build/khavaran.patch'],cwd=root,check=True)
- subprocess.run(['git','apply','build/khavaran.patch'],cwd=root,check=True)
- subprocess.run(['git','apply','--directory=libs/hbb_common','build/identity.patch'],cwd=root,check=True)
+ subprocess.run(['git','apply','--check','build/fanoos.patch'],cwd=root,check=True)
+ subprocess.run(['git','apply','build/fanoos.patch'],cwd=root,check=True)
+ patch = render_defaults((root/'build/identity.patch').read_text(encoding='utf-8'))
+ subprocess.run(['git','apply','--directory=libs/hbb_common','-'],input=patch.encode('utf-8'),cwd=root,check=True)
  (root/'flutter/assets').mkdir(exist_ok=True)
- (root/'flutter/assets/icon.png').write_bytes(base64.b64decode((root/'build/icon.b64').read_text()))
-print('Loaded pinned RustDesk source with Khavaran Desk changes')
+ for dest in ('flutter/assets/icon.png', 'res/128x128@2x.png'):
+  shutil.copy2(root/'build/fanoos.png', root/dest)
+ shutil.copy2(root/'build/fanoos.ico',root/'flutter/windows/runner/resources/app_icon.ico')
+print('Loaded pinned RustDesk source with Fanoos Desk changes')
 
 
-subprocess.run(['python', 'build/redesign.py'], cwd=root, check=True)
+subprocess.run([sys.executable, 'build/redesign.py'], cwd=root, check=True)

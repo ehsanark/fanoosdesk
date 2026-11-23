@@ -1,4 +1,4 @@
-name: Build Khavaran Desk Windows Client
+name: Build Fanoos Desk Windows Client
 
 permissions:
   contents: read
@@ -11,12 +11,15 @@ permissions:
       - '.github/workflows/flutter-build.yml'
       - '.github/workflows/bridge.yml'
       - '.github/workflows/third-party-RustDeskTempTopMostWindow.yml'
-      - '.github/workflows/khavaran.yml'
+      - '.github/workflows/fanoos.yml'
       - 'build/redesign.py'
       - 'build/bootstrap.py'
-      - 'build/khavaran.patch'
+      - 'build/fanoos.patch'
       - 'build/identity.patch'
-      - 'build/icon.b64'
+      - "build/fanoos.png"
+      - "build/fanoos.ico"
+      - "build/defaults.py"
+      - "build/server-defaults.json"
       - 'build/windows-installer.nsi'
   pull_request:
     branches:
@@ -25,12 +28,15 @@ permissions:
       - '.github/workflows/flutter-build.yml'
       - '.github/workflows/bridge.yml'
       - '.github/workflows/third-party-RustDeskTempTopMostWindow.yml'
-      - '.github/workflows/khavaran.yml'
+      - '.github/workflows/fanoos.yml'
       - 'build/redesign.py'
       - 'build/bootstrap.py'
-      - 'build/khavaran.patch'
+      - 'build/fanoos.patch'
       - 'build/identity.patch'
-      - 'build/icon.b64'
+      - "build/fanoos.png"
+      - "build/fanoos.ico"
+      - "build/defaults.py"
+      - "build/server-defaults.json"
       - 'build/windows-installer.nsi'
   workflow_dispatch: {}
 
@@ -39,7 +45,7 @@ jobs:
     uses: ./.github/workflows/flutter-build.yml
     with:
       upload-artifact: true
-      upload-tag: khavaran-build
+      upload-tag: fanoos-build
 
   package-windows:
     needs: build
@@ -55,20 +61,21 @@ jobs:
       - name: Install NSIS
         run: choco install nsis --yes --no-progress
 
-      - name: Build Khavaran installer
+      - name: Build Fanoos installer
         shell: pwsh
         working-directory: build
         run: |
+          Rename-Item windows-bundle/rustdesk.exe fanoosdesk.exe -ErrorAction Stop
           & "${env:ProgramFiles(x86)}\NSIS\makensis.exe" windows-installer.nsi
-          if (-not (Test-Path "KhavaranDesk-Setup-x64.exe")) {
+          if (-not (Test-Path "FanoosDesk-Setup-x64.exe")) {
             throw "NSIS output not found"
           }
-          Move-Item "KhavaranDesk-Setup-x64.exe" "KhavaranDesk-Client-Windows-x64.exe" -Force
+          Move-Item "FanoosDesk-Setup-x64.exe" "FanoosDesk-Client-Windows-x64.exe" -Force
 
       - uses: actions/upload-artifact@v4
         with:
-          name: KhavaranDesk-Client-Windows-x64
-          path: build/KhavaranDesk-Client-Windows-x64.exe
+          name: FanoosDesk-Client-Windows-x64
+          path: build/FanoosDesk-Client-Windows-x64.exe
           if-no-files-found: error
 
   publish:
@@ -80,7 +87,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: KhavaranDesk-Client-Windows-x64
+          name: FanoosDesk-Client-Windows-x64
           path: dist
 
       - name: Publish Windows client
@@ -93,23 +100,23 @@ jobs:
         run: |
           set -euo pipefail
           cd dist
-          sha256sum KhavaranDesk-Client-Windows-x64.exe > KhavaranDesk-Client-Windows-x64.exe.sha256
+          sha256sum FanoosDesk-Client-Windows-x64.exe > FanoosDesk-Client-Windows-x64.exe.sha256
           tag="client-windows-build-${BUILD_NUMBER}"
 
           cat > release-notes.md <<'EOF'
-          Khavaran Desk Windows Client
+          Fanoos Desk Windows Client
 
           - Persian-first UI with real RTL layout
           - visible server status and server setup on the main page
           - ID Server / Relay Server / API Server / Key configuration
           - server addresses stay LTR inside the Persian UI
-          - responsive Khavaran Desk desktop dashboard
+          - responsive Fanoos Desk desktop dashboard
 
           Unsigned Windows build. Validate on a Windows device before production deployment.
           EOF
 
           if ! gh release view "$tag" >/dev/null 2>&1; then
-            gh release create "$tag"               --target "$BUILD_SHA"               --title "Khavaran Desk Client — Windows x64 build ${BUILD_NUMBER}"               --notes-file release-notes.md               --prerelease
+            gh release create "$tag"               --target "$BUILD_SHA"               --title "Fanoos Desk Client — Windows x64 build ${BUILD_NUMBER}"               --notes-file release-notes.md               --prerelease
           fi
 
-          gh release upload "$tag"             KhavaranDesk-Client-Windows-x64.exe             KhavaranDesk-Client-Windows-x64.exe.sha256             --clobber
+          gh release upload "$tag"             FanoosDesk-Client-Windows-x64.exe             FanoosDesk-Client-Windows-x64.exe.sha256             --clobber

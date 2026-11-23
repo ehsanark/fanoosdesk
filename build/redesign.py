@@ -1,7 +1,8 @@
-# Apply the Khavaran desktop experience to the pinned RustDesk source.
+# Apply the Fanoos desktop experience to the pinned RustDesk source.
 # Every transformation is guarded so an upstream source change fails the build
 # instead of silently producing a partially-branded client.
 from pathlib import Path
+from defaults import render_defaults
 
 
 def read(path: str) -> str:
@@ -9,12 +10,12 @@ def read(path: str) -> str:
 
 
 def write(path: str, content: str) -> None:
-    Path(path).write_text(content, encoding="utf-8")
+    Path(path).write_text(render_defaults(content), encoding="utf-8")
 
 
 def replace_once(content: str, old: str, new: str, label: str) -> str:
     if old not in content:
-        raise RuntimeError(f"Khavaran redesign patch point not found: {label}")
+        raise RuntimeError(f"Fanoos redesign patch point not found: {label}")
     return content.replace(old, new, 1)
 
 
@@ -23,7 +24,7 @@ lang_path = "src/lang.rs"
 s = read(lang_path)
 needle = '    let mut lang = saved_lang.to_lowercase();\n'
 replacement = '''    let mut lang = saved_lang.to_lowercase();
-    // Khavaran Desk is a Persian-first client. Keep an explicit user choice,
+    // Fanoos Desk is a Persian-first client. Keep an explicit user choice,
     // but use Persian when no language has been selected yet.
     if lang.is_empty() || lang == "default" {
         lang = "fa".to_owned();
@@ -38,7 +39,7 @@ write(lang_path, s)
 main_path = "flutter/lib/main.dart"
 s = read(main_path)
 helper = r'''
-Locale _khavaranUiLocale() {
+Locale _fanoosUiLocale() {
   var selected =
       bind.mainGetLocalOption(key: kCommConfKeyLang).trim().toLowerCase();
   if (selected.isEmpty || selected == 'default') {
@@ -68,19 +69,19 @@ s = replace_once(
 s = replace_once(
     s,
     "      themeMode: themeMode,\n      home: home,\n",
-    "      themeMode: themeMode,\n      locale: _khavaranUiLocale(),\n      home: home,\n",
+    "      themeMode: themeMode,\n      locale: _fanoosUiLocale(),\n      home: home,\n",
     "installer/app locale",
 )
 s = replace_once(
     s,
     "          themeMode: MyTheme.currentThemeMode(),\n          home: isDesktop\n",
-    "          themeMode: MyTheme.currentThemeMode(),\n          locale: _khavaranUiLocale(),\n          home: isDesktop\n",
+    "          themeMode: MyTheme.currentThemeMode(),\n          locale: _fanoosUiLocale(),\n          home: isDesktop\n",
     "main app locale",
 )
 write(main_path, s)
 
 
-# Prefill the Network/Server dialog with Khavaran's private server defaults.
+# Prefill the Network/Server dialog with Fanoos's private server defaults.
 # Users can still override these values manually if they need another server.
 dialog_path = "flutter/lib/mobile/widgets/dialog.dart"
 s = read(dialog_path)
@@ -89,28 +90,28 @@ dialog_old = """  final idCtrl = TextEditingController(text: serverConfig.idServ
   final apiCtrl = TextEditingController(text: serverConfig.apiServer);
   final keyCtrl = TextEditingController(text: serverConfig.key);
 """
-dialog_new = """  const khavaranDefaultServer = '2.181.250.249';
-  const khavaranDefaultKey =
-      'SNngVLEdOKKSsMzQuqQwT1EFjftRAVxfHBQSyOss1Zg=';
+dialog_new = """  const fanoosDefaultServer = '__FANOOS_IP__';
+  const fanoosDefaultKey =
+      '__FANOOS_KEY__';
   final idCtrl = TextEditingController(
       text: serverConfig.idServer.trim().isEmpty
-          ? khavaranDefaultServer
+          ? fanoosDefaultServer
           : serverConfig.idServer);
   final relayCtrl = TextEditingController(
       text: serverConfig.relayServer.trim().isEmpty
-          ? khavaranDefaultServer
+          ? fanoosDefaultServer
           : serverConfig.relayServer);
   final apiCtrl = TextEditingController(text: serverConfig.apiServer);
   final keyCtrl = TextEditingController(
       text: serverConfig.key.trim().isEmpty
-          ? khavaranDefaultKey
+          ? fanoosDefaultKey
           : serverConfig.key);
 """
 s = replace_once(
     s,
     dialog_old,
     dialog_new,
-    "Network dialog Khavaran defaults",
+    "Network dialog Fanoos defaults",
 )
 write(dialog_path, s)
 
@@ -138,11 +139,11 @@ new_build = r'''    final isOutgoingOnly = bind.isOutgoingOnly();
         builder: (context, constraints) {
           final theme = Theme.of(context);
           final dark = theme.brightness == Brightness.dark;
-          final accent = const Color(0xFF0F766E);
+          final accent = const Color(0xFFAB390F);
           final accentSoft =
-              dark ? const Color(0xFF123B3A) : const Color(0xFFE7F5F2);
+              dark ? const Color(0xFF4A2018) : const Color(0xFFFFF0CA);
           final canvas =
-              dark ? const Color(0xFF0B1220) : const Color(0xFFF4F7F8);
+              dark ? const Color(0xFF0B1220) : const Color(0xFFFFF9EF);
           final surface =
               dark ? const Color(0xFF111C2D) : const Color(0xFFFFFFFF);
           final border =
@@ -186,11 +187,10 @@ new_build = r'''    final isOutgoingOnly = bind.isOutgoingOnly();
                 final hasCustomId = config.idServer.trim().isNotEmpty;
                 final idServer = hasCustomId
                     ? config.idServer.trim()
-                    : '2.181.250.249';
+                    : '__FANOOS_IP__';
                 final relayServer = config.relayServer.trim().isNotEmpty
                     ? config.relayServer.trim()
-                    : '2.181.250.249';
-                const configured = true;
+                    : '__FANOOS_IP__';
 
                 return Container(
                   padding: const EdgeInsets.all(16),
@@ -240,17 +240,13 @@ new_build = r'''    final isOutgoingOnly = bind.isOutgoingOnly();
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 9, vertical: 5),
                             decoration: BoxDecoration(
-                              color: configured
-                                  ? const Color(0xFFDCFCE7)
-                                  : const Color(0xFFFFEDD5),
+                              color: const Color(0xFFFFEDD5),
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
-                              configured ? 'فعال' : 'نیاز به تنظیم',
+                              hasCustomId ? 'سفارشی' : 'پیش‌فرض',
                               style: TextStyle(
-                                color: configured
-                                    ? const Color(0xFF166534)
-                                    : const Color(0xFF9A3412),
+                                color: const Color(0xFF9A3412),
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -258,7 +254,7 @@ new_build = r'''    final isOutgoingOnly = bind.isOutgoingOnly();
                           ),
                         ],
                       ),
-                      if (configured) ...[
+                      ...[
                         const SizedBox(height: 12),
                         Text(
                           [
@@ -286,7 +282,7 @@ new_build = r'''    final isOutgoingOnly = bind.isOutgoingOnly();
                           label: Text(
                             hasCustomId
                                 ? 'ویرایش تنظیمات سرور'
-                                : 'تنظیمات سرور خاوران',
+                                : 'تنظیمات سرور فانوس',
                           ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: accent,
@@ -408,13 +404,13 @@ new_build = r'''    final isOutgoingOnly = bind.isOutgoingOnly();
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: dark
-                    ? const [Color(0xFF10243A), Color(0xFF0F766E)]
-                    : const [Color(0xFF0E3A47), Color(0xFF0F766E)],
+                    ? const [Color(0xFF481124), Color(0xFFAB390F)]
+                    : const [Color(0xFF781934), Color(0xFFAB390F)],
               ),
               borderRadius: BorderRadius.circular(22),
               boxShadow: const [
                 BoxShadow(
-                  color: Color(0x280F766E),
+                  color: Color(0x28AB390F),
                   blurRadius: 28,
                   offset: Offset(0, 10),
                 ),
@@ -430,10 +426,9 @@ new_build = r'''    final isOutgoingOnly = bind.isOutgoingOnly();
                     borderRadius: BorderRadius.circular(15),
                     border: Border.all(color: Colors.white.withOpacity(.16)),
                   ),
-                  child: const Icon(
-                    Icons.desktop_windows_rounded,
-                    color: Colors.white,
-                    size: 27,
+                  child: Padding(
+                    padding: const EdgeInsets.all(5),
+                    child: Image.asset('assets/icon.png'),
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -442,7 +437,7 @@ new_build = r'''    final isOutgoingOnly = bind.isOutgoingOnly();
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'خاوران دسک',
+                        'فانوس دسک',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 22,
@@ -451,9 +446,9 @@ new_build = r'''    final isOutgoingOnly = bind.isOutgoingOnly();
                       ),
                       SizedBox(height: 3),
                       Text(
-                        'KHAVARAN DESK  •  دسترسی امن از راه دور',
+                        'FANOOS DESK  •  دسترسی امن از راه دور',
                         style: TextStyle(
-                          color: Color(0xFFD3F1ED),
+                          color: Color(0xFFFFE2A0),
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                         ),
@@ -520,15 +515,20 @@ s = s[:build_start] + new_build + s[build_end:]
 write(home_path, s)
 
 
-# Keep the Khavaran accent consistent with upstream translucent highlights.
+# Keep the Fanoos accent consistent with upstream translucent highlights.
 common_path = "flutter/lib/common.dart"
 s = read(common_path)
-s = s.replace("0x770071FF", "0x770F766E").replace(
-    "0xAA0071FF", "0xAA0F766E"
+s = s.replace("0x770071FF", "0x77AB390F").replace(
+    "0xAA0071FF", "0xAAAB390F"
 )
 write(common_path, s)
 
 print(
-    "Applied Khavaran Persian-first locale/RTL, responsive dashboard, "
+    "Applied Fanoos Persian-first locale/RTL, responsive dashboard, "
     "and visible server configuration"
 )
+
+for launcher in ("res/rustdesk.desktop", "res/rustdesk-link.desktop"):
+    write(launcher, replace_once(read(launcher), "Name=RustDesk\n",
+                                 "Name=Fanoos Desk\nName[fa]=فانوس دسک\n",
+                                 launcher))

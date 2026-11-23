@@ -7,7 +7,7 @@ index 6fe1004..2938145 100644
      pub static ref PROD_RENDEZVOUS_SERVER: RwLock<String> = RwLock::new("".to_owned());
      pub static ref EXE_RENDEZVOUS_SERVER: RwLock<String> = Default::default();
 -    pub static ref APP_NAME: RwLock<String> = RwLock::new("RustDesk".to_owned());
-+    pub static ref APP_NAME: RwLock<String> = RwLock::new("KhavaranDesk".to_owned());
++    pub static ref APP_NAME: RwLock<String> = RwLock::new("FanoosDesk".to_owned());
      static ref KEY_PAIR: Mutex<Option<KeyPair>> = Default::default();
      static ref USER_DEFAULT_CONFIG: RwLock<(UserDefaultConfig, Instant)> = RwLock::new((UserDefaultConfig::load(), Instant::now()));
      pub static ref NEW_STORED_PEER_CONFIG: Mutex<HashSet<String>> = Default::default();
@@ -16,9 +16,9 @@ index 6fe1004..2938145 100644
  ];
  
 -pub const RENDEZVOUS_SERVERS: &[&str] = &["rs-ny.rustdesk.com"];
-+pub const RENDEZVOUS_SERVERS: &[&str] = &["2.181.250.249"];
++pub const RENDEZVOUS_SERVERS: &[&str] = &["__FANOOS_IP__"];
 -pub const RS_PUB_KEY: &str = "OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=";
-+pub const RS_PUB_KEY: &str = "SNngVLEdOKKSsMzQuqQwT1EFjftRAVxfHBQSyOss1Zg=";
++pub const RS_PUB_KEY: &str = "__FANOOS_KEY__";
  
  pub const RENDEZVOUS_PORT: i32 = 21116;
 @@ -1055,17 +1055,7 @@ impl Config {
@@ -55,11 +55,11 @@ index 6fe1004..2938145 100644
  }
 +
 +#[cfg(all(test, not(any(target_os = "android", target_os = "ios"))))]
-+mod khavaran_identity_tests {
++mod fanoos_identity_tests {
 +    use super::*;
 +
 +    #[test]
-+    fn khavaran_automatic_ids_have_a_separate_numeric_range() {
++    fn fanoos_automatic_ids_have_a_separate_numeric_range() {
 +        for _ in 0..256 {
 +            let id: u32 = Config::get_auto_id().unwrap().parse().unwrap();
 +            assert!((2_000_000_000..2_100_000_000).contains(&id));
@@ -68,9 +68,9 @@ index 6fe1004..2938145 100644
 +    }
 +
 +    #[test]
-+    fn khavaran_has_independent_identity_and_private_server_defaults() {
-+        assert_eq!(APP_NAME.read().unwrap().as_str(), "KhavaranDesk");
-+        assert_eq!(RENDEZVOUS_SERVERS, &["2.181.250.249"]);
-+        assert_eq!(RS_PUB_KEY, "SNngVLEdOKKSsMzQuqQwT1EFjftRAVxfHBQSyOss1Zg=");
++    fn fanoos_has_independent_identity_and_private_server_defaults() {
++        assert_eq!(APP_NAME.read().unwrap().as_str(), "FanoosDesk");
++        assert_eq!(RENDEZVOUS_SERVERS, &["__FANOOS_IP__"]);
++        assert_eq!(RS_PUB_KEY, "__FANOOS_KEY__");
 +    }
 +}

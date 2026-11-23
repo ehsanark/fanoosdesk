@@ -1,0 +1,25 @@
+[Unit]
+Description=Fanoos Desk ID/Rendezvous Server (hbbs)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=fanoosdesk
+Group=fanoosdesk
+WorkingDirectory=/var/lib/fanoosdesk-server
+Environment=HBBS_ARGS=
+Environment=RUST_LOG=info
+EnvironmentFile=-/etc/fanoosdesk-server/server.env
+ExecStart=/bin/sh -c 'exec /opt/fanoosdesk-server/bin/hbbs $HBBS_ARGS'
+Restart=always
+RestartSec=5
+LimitNOFILE=1000000
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/fanoosdesk-server
+
+[Install]
+WantedBy=multi-user.target

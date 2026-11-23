@@ -1,4 +1,4 @@
-name: Build Khavaran Desk Server
+name: Build Fanoos Desk Server
 
 permissions:
   contents: read
@@ -47,7 +47,7 @@ jobs:
           curl --fail --location --retry 4 --retry-all-errors --output upstream.zip "$url"
           echo "${{ matrix.expected_sha256 }}  upstream.zip" | sha256sum --check -
 
-      - name: Assemble Khavaran server bundle
+      - name: Assemble Fanoos server bundle
         shell: bash
         run: |
           set -euo pipefail
@@ -60,30 +60,30 @@ jobs:
           test -n "$hbbs_path"
           test -n "$hbbr_path"
 
-          folder="KhavaranDesk-Server-Linux-${{ matrix.label }}"
+          folder="FanoosDesk-Server-Linux-${{ matrix.label }}"
           mkdir -p "package/$folder/bin" "package/$folder/systemd"
 
           install -m 0755 "$hbbs_path" "package/$folder/bin/hbbs"
           install -m 0755 "$hbbr_path" "package/$folder/bin/hbbr"
           install -m 0755 server/install.sh "package/$folder/install.sh"
           install -m 0755 server/uninstall.sh "package/$folder/uninstall.sh"
-          install -m 0755 server/khavaran-server "package/$folder/khavaran-server"
-          install -m 0644 server/khavaran-hbbs.service "package/$folder/systemd/khavaran-hbbs.service"
-          install -m 0644 server/khavaran-hbbr.service "package/$folder/systemd/khavaran-hbbr.service"
+          install -m 0755 server/fanoos-server "package/$folder/fanoos-server"
+          install -m 0644 server/fanoos-hbbs.service "package/$folder/systemd/fanoos-hbbs.service"
+          install -m 0644 server/fanoos-hbbr.service "package/$folder/systemd/fanoos-hbbr.service"
           install -m 0644 server/VERSION "package/$folder/VERSION"
           install -m 0644 server/UPSTREAM_VERSION "package/$folder/UPSTREAM_VERSION"
           install -m 0644 server/README.md "package/$folder/README.md"
           install -m 0644 LICENSE "package/$folder/LICENSE"
 
           cat > "package/$folder/UPSTREAM.md" <<EOF
-          Khavaran Desk Server package: ${PACKAGE_VERSION}
+          Fanoos Desk Server package: ${PACKAGE_VERSION}
           RustDesk Server OSS upstream: ${UPSTREAM_VERSION}
           Upstream project: https://github.com/rustdesk/rustdesk-server
           Upstream asset: rustdesk-server-linux-${{ matrix.asset_arch }}.zip
           Upstream asset SHA256: ${{ matrix.expected_sha256 }}
 
           The hbbs and hbbr binaries are unmodified official RustDesk Server OSS
-          release binaries. Khavaran Desk adds packaging, systemd services,
+          release binaries. Fanoos Desk adds packaging, systemd services,
           installation tooling and documentation.
           EOF
 
@@ -100,7 +100,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          folder="$GITHUB_WORKSPACE/package/KhavaranDesk-Server-Linux-x64"
+          folder="$GITHUB_WORKSPACE/package/FanoosDesk-Server-Linux-x64"
           "$folder/bin/hbbs" --help >/dev/null
           "$folder/bin/hbbr" --help >/dev/null
 
@@ -124,10 +124,10 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: khavaran-server-${{ matrix.label }}
+          name: fanoos-server-${{ matrix.label }}
           path: |
-            KhavaranDesk-Server-Linux-${{ matrix.label }}.tar.gz
-            KhavaranDesk-Server-Linux-${{ matrix.label }}.tar.gz.sha256
+            FanoosDesk-Server-Linux-${{ matrix.label }}.tar.gz
+            FanoosDesk-Server-Linux-${{ matrix.label }}.tar.gz.sha256
           if-no-files-found: error
 
   publish:
@@ -149,7 +149,7 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          pattern: khavaran-server-*
+          pattern: fanoos-server-*
           path: dist
           merge-multiple: true
 
@@ -171,25 +171,25 @@ jobs:
           fi
 
           cat > release-notes.md <<EOF
-          Khavaran Desk Server ${PACKAGE_VERSION}
+          Fanoos Desk Server ${PACKAGE_VERSION}
 
           Based on verified, unmodified RustDesk Server OSS ${UPSTREAM_VERSION} hbbs/hbbr binaries.
 
           Included:
           - Linux x64 server bundle
           - Linux ARM64 / Jetson server bundle
-          - systemd services: khavaran-hbbs and khavaran-hbbr
+          - systemd services: fanoos-hbbs and fanoos-hbbr
           - install/uninstall scripts
-          - khavaran-server status/key/log/restart utility
+          - fanoos-server status/key/log/restart utility
           - SHA256 checksums
 
           Client setup after installation:
           - ID Server: public IP/hostname of this server
           - Relay Server: public IP/hostname of this server
           - API Server: blank for OSS
-          - Key: sudo khavaran-server key
+          - Key: sudo fanoos-server key
 
           Required firewall ports: TCP 21115-21119 and UDP 21116.
           EOF
 
-          gh release create "$tag"             --target "$GITHUB_SHA"             --title "Khavaran Desk Server ${PACKAGE_VERSION} (RustDesk ${UPSTREAM_VERSION})"             --notes-file release-notes.md             --prerelease             KhavaranDesk-Server-Linux-x64.tar.gz             KhavaranDesk-Server-Linux-x64.tar.gz.sha256             KhavaranDesk-Server-Linux-ARM64.tar.gz             KhavaranDesk-Server-Linux-ARM64.tar.gz.sha256             SHA256SUMS
+          gh release create "$tag"             --target "$GITHUB_SHA"             --title "Fanoos Desk Server ${PACKAGE_VERSION} (RustDesk ${UPSTREAM_VERSION})"             --notes-file release-notes.md             --prerelease             FanoosDesk-Server-Linux-x64.tar.gz             FanoosDesk-Server-Linux-x64.tar.gz.sha256             FanoosDesk-Server-Linux-ARM64.tar.gz             FanoosDesk-Server-Linux-ARM64.tar.gz.sha256             SHA256SUMS
