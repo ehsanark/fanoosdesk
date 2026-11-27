@@ -22,6 +22,8 @@ on:
       - "build/redesign.py"
       - "build/fanoos.patch"
       - "build/identity.patch"
+      - "build/fonts/**"
+      - "build/desktop-ui.patch"
       - "build/fanoos.png"
       - "build/fanoos.ico"
       - "build/defaults.py"

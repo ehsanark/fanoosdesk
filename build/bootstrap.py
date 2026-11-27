@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 import tempfile,subprocess,shutil,sys
 from defaults import render_defaults
 root=Path.cwd()
@@ -32,3 +33,11 @@ print('Loaded pinned RustDesk source with Fanoos Desk changes')
 
 
 subprocess.run([sys.executable, 'build/redesign.py'], cwd=root, check=True)
+
+subprocess.run(['git', 'apply', 'build/desktop-ui.patch'], cwd=root, check=True)
+shutil.copytree(root/'build/fonts', root/'flutter/assets/fonts', dirs_exist_ok=True)
+common = root/'flutter/lib/common.dart'
+source = common.read_text(encoding='utf-8')
+build_number = int(os.environ.get('GITHUB_RUN_NUMBER', '0'))
+assert source.count('__FANOOS_BUILD_NUMBER__') == 1
+common.write_text(source.replace('__FANOOS_BUILD_NUMBER__', str(build_number)), encoding='utf-8')

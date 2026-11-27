@@ -1,0 +1,500 @@
+diff --git a/flutter/lib/common.dart b/flutter/lib/common.dart
+index 5de281c..8ebbcf2 100644
+--- a/flutter/lib/common.dart
++++ b/flutter/lib/common.dart
+@@ -248,7 +248,7 @@ class ColorThemeExtension extends ThemeExtension<ColorThemeExtension> {
+ class MyTheme {
+   MyTheme._();
+ 
+-  static const Color grayBg = Color(0xFFEFEFF2);
++  static const Color grayBg = Color(0xFFF3EEE7);
+   static const Color accent = Color(0xFFAB390F);
+   static const Color accent50 = Color(0x77AB390F);
+   static const Color accent80 = Color(0xAAAB390F);
+@@ -370,11 +370,12 @@ class MyTheme {
+   );
+ 
+   static ThemeData lightTheme = ThemeData(
++    fontFamily: "Vazirmatn",
+     // https://stackoverflow.com/questions/77537315/after-upgrading-to-flutter-3-16-the-app-bar-background-color-button-size-and
+     useMaterial3: false,
+     brightness: Brightness.light,
+-    hoverColor: Color.fromARGB(255, 224, 224, 224),
+-    scaffoldBackgroundColor: Colors.white,
++    hoverColor: Color(0xFFF7EBD8),
++    scaffoldBackgroundColor: Color(0xFFFBF8F3),
+     dialogBackgroundColor: Colors.white,
+     appBarTheme: AppBarTheme(
+       shadowColor: Colors.transparent,
+@@ -452,7 +453,7 @@ class MyTheme {
+         style:
+             MenuStyle(backgroundColor: MaterialStatePropertyAll(Colors.white))),
+     colorScheme: ColorScheme.light(
+-        primary: Colors.blue, secondary: accent, background: grayBg),
++        primary: accent, secondary: Color(0xFF93451F), background: Color(0xFFFAF6EF)),
+     popupMenuTheme: PopupMenuThemeData(
+         color: Colors.white,
+         shape: RoundedRectangleBorder(
+@@ -469,6 +470,7 @@ class MyTheme {
+     ],
+   );
+   static ThemeData darkTheme = ThemeData(
++    fontFamily: "Vazirmatn",
+     useMaterial3: false,
+     brightness: Brightness.dark,
+     hoverColor: Color.fromARGB(255, 45, 46, 53),
+@@ -4080,7 +4082,42 @@ void earlyAssert() {
+   assert('\1' == '1');
+ }
+ 
++Future<void> checkFanoosUpdate() async {
++  const installed = __FANOOS_BUILD_NUMBER__;
++  if (installed == 0 || !mainGetLocalBoolOptionSync(kOptionEnableCheckUpdate)) return;
++  final platform = isWindows ? 'windows' : 'jetson';
++  final tagPattern = RegExp('^client-' + platform + r'-build-([0-9]+)$');
++  try {
++    final response = await http.HttpService().sendRequest(
++        Uri.https('api.github.com', '/repos/ehsanark/fanoosdesk/releases',
++            {'per_page': '100'}), http.HttpMethod.get);
++    if (response.statusCode != 200) return;
++    var latest = installed;
++    for (final release in jsonDecode(response.body) as List) {
++      if (release['draft'] == true) continue;
++      final match = tagPattern.firstMatch(release['tag_name'] as String);
++      if (match == null) continue;
++      final build = int.tryParse(match.group(1)!) ?? 0;
++      final filename = isWindows ? 'FanoosDesk-Client-Windows-x64.exe' :
++          'FanoosDesk-Client-Jetson-Orin-Nano-arm64.deb';
++      if (build > latest && (release['assets'] as List).any((a) => a['name'] == filename)) {
++        latest = build;
++      }
++    }
++    if (latest > installed) {
++      stateGlobal.updateUrl.value =
++          'https://github.com/ehsanark/fanoosdesk/releases/tag/client-$platform-build-$latest';
++    }
++  } catch (e) {
++    debugPrint('Fanoos release check: $e');
++  }
++}
++
+ void checkUpdate() {
++  if (isWindows || isLinux) {
++    checkFanoosUpdate();
++    return;
++  }
+   if (!isWeb) {
+     if (!bind.isCustomClient()) {
+       platformFFI.registerEventHandler(
+diff --git a/flutter/lib/common/widgets/autocomplete.dart b/flutter/lib/common/widgets/autocomplete.dart
+index e83f5fb..c08ec04 100644
+--- a/flutter/lib/common/widgets/autocomplete.dart
++++ b/flutter/lib/common/widgets/autocomplete.dart
+@@ -366,6 +366,7 @@ class AutocompletePeerTileState extends State<AutocompletePeerTile> {
+                                                           ? formatID(
+                                                               widget.peer.id)
+                                                           : widget.peer.alias,
++                                                      textDirection: widget.peer.alias.isEmpty ? TextDirection.ltr : null,
+                                                       overflow:
+                                                           TextOverflow.ellipsis,
+                                                       style: Theme.of(context)
+diff --git a/flutter/lib/common/widgets/peer_card.dart b/flutter/lib/common/widgets/peer_card.dart
+index 1f9f3ed..d45c794 100644
+--- a/flutter/lib/common/widgets/peer_card.dart
++++ b/flutter/lib/common/widgets/peer_card.dart
+@@ -187,6 +187,7 @@ class _PeerCardState extends State<_PeerCard>
+                         Expanded(
+                             child: Text(
+                           peer.alias.isEmpty ? formatID(peer.id) : peer.alias,
++                          textDirection: peer.alias.isEmpty ? TextDirection.ltr : null,
+                           overflow: TextOverflow.ellipsis,
+                           style: Theme.of(context).textTheme.titleSmall,
+                         )),
+@@ -369,6 +370,7 @@ class _PeerCardState extends State<_PeerCard>
+                         Expanded(
+                             child: Text(
+                           peer.alias.isEmpty ? formatID(peer.id) : peer.alias,
++                          textDirection: peer.alias.isEmpty ? TextDirection.ltr : null,
+                           overflow: TextOverflow.ellipsis,
+                           style: Theme.of(context).textTheme.titleSmall,
+                         )),
+diff --git a/flutter/lib/desktop/pages/connection_page.dart b/flutter/lib/desktop/pages/connection_page.dart
+index 1d4928b..5570886 100644
+--- a/flutter/lib/desktop/pages/connection_page.dart
++++ b/flutter/lib/desktop/pages/connection_page.dart
+@@ -420,7 +420,7 @@ class _ConnectionPageState extends State<ConnectionPage>
+                           keyboardType: TextInputType.visiblePassword,
+                           focusNode: fieldFocusNode,
+                           style: const TextStyle(
+-                            fontFamily: 'WorkSans',
++                            fontFamily: 'Vazirmatn',
+                             fontSize: 22,
+                             height: 1.4,
+                           ),
+@@ -436,6 +436,7 @@ class _ConnectionPageState extends State<ConnectionPage>
+                               contentPadding: const EdgeInsets.symmetric(
+                                   horizontal: 15, vertical: 13)),
+                           controller: fieldTextEditingController,
++                          textDirection: TextDirection.ltr,
+                           inputFormatters: [IDTextInputFormatter()],
+                           onChanged: (v) {
+                             _idController.id = v;
+diff --git a/flutter/lib/desktop/pages/desktop_home_page.dart b/flutter/lib/desktop/pages/desktop_home_page.dart
+index 6ce8567..313d990 100644
+--- a/flutter/lib/desktop/pages/desktop_home_page.dart
++++ b/flutter/lib/desktop/pages/desktop_home_page.dart
+@@ -12,7 +12,6 @@ import 'package:flutter_hbb/consts.dart';
+ import 'package:flutter_hbb/desktop/pages/connection_page.dart';
+ import 'package:flutter_hbb/desktop/pages/desktop_setting_page.dart';
+ import 'package:flutter_hbb/desktop/pages/desktop_tab_page.dart';
+-import 'package:flutter_hbb/desktop/widgets/update_progress.dart';
+ import 'package:flutter_hbb/models/platform_model.dart';
+ import 'package:flutter_hbb/mobile/widgets/dialog.dart';
+ import 'package:flutter_hbb/models/server_model.dart';
+@@ -70,13 +69,13 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+           final accentSoft =
+               dark ? const Color(0xFF4A2018) : const Color(0xFFFFF0CA);
+           final canvas =
+-              dark ? const Color(0xFF0B1220) : const Color(0xFFFFF9EF);
++              dark ? const Color(0xFF0B1220) : const Color(0xFFF9F5EE);
+           final surface =
+               dark ? const Color(0xFF111C2D) : const Color(0xFFFFFFFF);
+           final border =
+-              dark ? const Color(0xFF26364C) : const Color(0xFFDDE5E7);
++              dark ? const Color(0xFF26364C) : const Color(0xFFE4D8C7);
+           final muted =
+-              dark ? const Color(0xFF9FB0C4) : const Color(0xFF667781);
++              dark ? const Color(0xFF9FB0C4) : const Color(0xFF6F5C50);
+ 
+           Widget panel(Widget child, {EdgeInsetsGeometry? padding}) {
+             return Container(
+@@ -158,7 +157,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+                                   maxLines: 1,
+                                   overflow: TextOverflow.ellipsis,
+                                   textDirection: TextDirection.ltr,
+-                                  style: TextStyle(fontSize: 11.5, color: muted),
++                                  style: TextStyle(fontSize: 13, color: muted),
+                                 ),
+                               ],
+                             ),
+@@ -174,7 +173,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+                               hasCustomId ? 'سفارشی' : 'پیش‌فرض',
+                               style: TextStyle(
+                                 color: const Color(0xFF9A3412),
+-                                fontSize: 10.5,
++                                fontSize: 12,
+                                 fontWeight: FontWeight.w700,
+                               ),
+                             ),
+@@ -192,7 +191,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+                           maxLines: 2,
+                           overflow: TextOverflow.ellipsis,
+                           textDirection: TextDirection.ltr,
+-                          style: TextStyle(fontSize: 10.5, color: muted),
++                          style: TextStyle(fontSize: 12, color: muted),
+                         ),
+                       ],
+                       const SizedBox(height: 14),
+@@ -265,7 +264,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+                             const SizedBox(height: 3),
+                             Text(
+                               'شناسه و دسترسی این دستگاه',
+-                              style: TextStyle(fontSize: 11.5, color: muted),
++                              style: TextStyle(fontSize: 13, color: muted),
+                             ),
+                           ],
+                         ),
+@@ -332,7 +331,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+                 end: Alignment.bottomRight,
+                 colors: dark
+                     ? const [Color(0xFF481124), Color(0xFFAB390F)]
+-                    : const [Color(0xFF781934), Color(0xFFAB390F)],
++                    : const [Color(0xFF672A20), Color(0xFFAB390F)],
+               ),
+               borderRadius: BorderRadius.circular(22),
+               boxShadow: const [
+@@ -552,7 +551,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+     final model = gFFI.serverModel;
+     return Container(
+       margin: const EdgeInsets.only(left: 20, right: 11),
+-      height: 57,
++      height: 76,
+       child: Row(
+         crossAxisAlignment: CrossAxisAlignment.baseline,
+         textBaseline: TextBaseline.alphabetic,
+@@ -591,11 +590,13 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+                     child: GestureDetector(
+                       onDoubleTap: () {
+                         Clipboard.setData(
+-                            ClipboardData(text: model.serverId.text));
++                            ClipboardData(text: model.serverId.text.replaceAll(' ', '')));
+                         showToast(translate("Copied"));
+                       },
+                       child: TextFormField(
+                         controller: model.serverId,
++                        textDirection: TextDirection.ltr,
++                        textAlign: TextAlign.left,
+                         readOnly: true,
+                         decoration: InputDecoration(
+                           border: InputBorder.none,
+@@ -791,31 +792,13 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+   }
+ 
+   Widget buildHelpCards(String updateUrl) {
+-    if (!bind.isCustomClient() &&
+-        updateUrl.isNotEmpty &&
+-        !isCardClosed &&
+-        bind.mainUriPrefixSync().contains('rustdesk')) {
+-      final isToUpdate = (isWindows || isMacOS) && bind.mainIsInstalled();
+-      String btnText = isToUpdate ? 'Update' : 'Download';
+-      GestureTapCallback onPressed = () async {
+-        final Uri url = Uri.parse('https://rustdesk.com/download');
+-        await launchUrl(url);
+-      };
+-      if (isToUpdate) {
+-        onPressed = () {
+-          handleUpdate(updateUrl);
+-        };
+-      }
++    if (updateUrl.isNotEmpty && !isCardClosed) {
+       return buildInstallCard(
+-          "Status",
+-          "${translate("new-version-of-{${bind.mainGetAppNameSync()}}-tip")} (${bind.mainGetNewVersion()}).",
+-          btnText,
+-          onPressed,
+-          closeButton: true,
+-          help: isToUpdate ? 'Changelog' : null,
+-          link: isToUpdate
+-              ? 'https://github.com/rustdesk/rustdesk/releases/tag/${bind.mainGetNewVersion()}'
+-              : null);
++          'به‌روزرسانی فانوس دسک',
++          'نسخهٔ جدید فانوس دسک برای این دستگاه آماده است.',
++          'مشاهده و دانلود',
++          () async { await launchUrl(Uri.parse(updateUrl)); },
++          closeButton: true);
+     }
+     if (systemError.isNotEmpty) {
+       return buildInstallCard("", systemError, "", () {});
+@@ -960,6 +943,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+       }
+     }
+ 
++    final ink = Theme.of(context).brightness == Brightness.dark
++        ? const Color(0xFFFFE7BE) : const Color(0xFF5D341A);
+     return Stack(
+       children: [
+         Container(
+@@ -967,14 +952,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+               0, marginTop, 0, bind.isIncomingOnly() ? marginTop : 0),
+           child: Container(
+               decoration: BoxDecoration(
+-                  gradient: LinearGradient(
+-                begin: Alignment.centerLeft,
+-                end: Alignment.centerRight,
+-                colors: [
+-                  Color.fromARGB(255, 226, 66, 188),
+-                  Color.fromARGB(255, 244, 114, 124),
+-                ],
+-              )),
++                  color: Theme.of(context).brightness == Brightness.dark
++                      ? const Color(0xFF472D26) : const Color(0xFFFFF2D8),
++                  borderRadius: BorderRadius.circular(16),
++                  border: Border.all(color: const Color(0xFFBD8642))),
+               padding: EdgeInsets.all(20),
+               child: Column(
+                   mainAxisAlignment: MainAxisAlignment.start,
+@@ -985,7 +966,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+                                   child: Text(
+                                 translate(title),
+                                 style: TextStyle(
+-                                    color: Colors.white,
++                                    color: ink,
+                                     fontWeight: FontWeight.bold,
+                                     fontSize: 15),
+                               ).marginOnly(bottom: 6)),
+@@ -997,7 +978,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+                             translate(content),
+                             style: TextStyle(
+                                 height: 1.5,
+-                                color: Colors.white,
++                                color: ink,
+                                 fontWeight: FontWeight.normal,
+                                 fontSize: 13),
+                           ).marginOnly(bottom: 20)
+@@ -1012,9 +993,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+                                       padding: 8,
+                                       isOutline: true,
+                                       text: translate(btnText),
+-                                      textColor: Colors.white,
+-                                      borderColor: Colors.white,
+-                                      textSize: 20,
++                                      textColor: ink,
++                                      borderColor: ink,
++                                      textSize: 15,
+                                       radius: 10,
+                                       onTap: onPressed,
+                                     )
+@@ -1032,7 +1013,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+                                         style: TextStyle(
+                                             decoration:
+                                                 TextDecoration.underline,
+-                                            color: Colors.white,
++                                            color: ink,
+                                             fontSize: 12),
+                                       )).marginOnly(top: 6)),
+                             ]
+@@ -1045,7 +1026,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+             child: IconButton(
+               icon: Icon(
+                 Icons.close,
+-                color: Colors.white,
++                color: ink,
+                 size: 20,
+               ),
+               onPressed: closeCard,
+diff --git a/flutter/lib/desktop/pages/desktop_setting_page.dart b/flutter/lib/desktop/pages/desktop_setting_page.dart
+index 82f038c..846e68b 100644
+--- a/flutter/lib/desktop/pages/desktop_setting_page.dart
++++ b/flutter/lib/desktop/pages/desktop_setting_page.dart
+@@ -482,8 +482,7 @@ class _GeneralState extends State<_General> {
+   Widget other() {
+     final incomingOnly = bind.isIncomingOnly();
+     final outgoingOnly = bind.isOutgoingOnly();
+-    final showAutoUpdate = (isWindows && bind.mainIsInstalled()) ||
+-    (isMacOS && bind.mainIsInstalled() && bind.mainIsInstalledDaemon(prompt: false) && !bind.isCustomClient());
++    final showAutoUpdate = (isMacOS && bind.mainIsInstalled() && bind.mainIsInstalledDaemon(prompt: false) && !bind.isCustomClient());
+     final children = <Widget>[
+       if (!isWeb && !incomingOnly)
+         _OptionCheckBox(context, 'Confirm before closing multiple tabs',
+diff --git a/flutter/pubspec.yaml b/flutter/pubspec.yaml
+index 7a2162c..03101c5 100644
+--- a/flutter/pubspec.yaml
++++ b/flutter/pubspec.yaml
+@@ -157,8 +157,19 @@ flutter:
+   # To add assets to your application, add an assets section, like this:
+   assets:
+     - assets/
++    - assets/fonts/OFL.txt
+ 
+   fonts:
++    - family: Vazirmatn
++      fonts:
++        - asset: assets/fonts/Vazirmatn-400.ttf
++          weight: 400
++        - asset: assets/fonts/Vazirmatn-500.ttf
++          weight: 500
++        - asset: assets/fonts/Vazirmatn-700.ttf
++          weight: 700
++        - asset: assets/fonts/Vazirmatn-900.ttf
++          weight: 900
+     - family: GestureIcons
+       fonts:
+         - asset: assets/gestures.ttf
+diff --git a/src/lang/fa.rs b/src/lang/fa.rs
+index d37b027..b970591 100644
+--- a/src/lang/fa.rs
++++ b/src/lang/fa.rs
+@@ -7,12 +7,12 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Password", "رمز عبور"),
+         ("Ready", "آماده به کار"),
+         ("Established", "اتصال برقرار شد"),
+-        ("connecting_status", "...در حال برقراری ارتباط با سرور"),
++        ("connecting_status", "در حال برقراری ارتباط با سرور…"),
+         ("Enable service", "فعالسازی سرویس"),
+         ("Start service", "اجرای سرویس"),
+         ("Service is running", "سرویس در حال اجرا است"),
+         ("Service is not running", "سرویس اجرا نشده"),
+-        ("not_ready_status", "ارتباط برقرار نشد. لطفا شبکه خود را بررسی کنید"),
++        ("not_ready_status", "ارتباط با سرور برقرار نیست. اتصال شبکه را بررسی کنید."),
+         ("Control Remote Desktop", "کنترل دسکتاپ میزبان"),
+         ("Transfer file", "انتقال فایل"),
+         ("Connect", "اتصال"),
+@@ -28,7 +28,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Enable file transfer", "انتقال فایل را فعال کنید"),
+         ("Enable TCP tunneling", "را فعال کنید TCP تانل"),
+         ("IP Whitelisting", "های مجاز IP لیست"),
+-        ("ID/Relay Server", "ID/Relay سرور"),
++        ("ID/Relay Server", "سرور شناسه و سرور واسط"),
+         ("Import server config", "تنظیم سرور با فایل"),
+         ("Export Server Config", "ایجاد فایل تظیمات از سرور فعلی"),
+         ("Import server configuration successfully", "تنظیمات سرور با فایل کانفیگ با موفقیت انجام شد"),
+@@ -75,13 +75,13 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Do you want to enter again?", "آیا میخواهید مجددا وارد شوید؟"),
+         ("Connection Error", "خطا در اتصال"),
+         ("Error", "خطا"),
+-        ("Reset by the peer", "توسط میزبان حذف شد"),
+-        ("Connecting...", "...در حال اتصال"),
+-        ("Connection in progress. Please wait.", "در حال اتصال. لطفا متظر بمانید"),
++        ("Reset by the peer", "دستگاه مقابل ارتباط را قطع کرد."),
++        ("Connecting...", "در حال اتصال…"),
++        ("Connection in progress. Please wait.", "در حال برقراری اتصال هستیم. لطفاً صبر کنید."),
+         ("Please try 1 minute later", "لطفا بعد از 1 دقیقه مجددا تلاش کنید"),
+         ("Login Error", "ورود ناموفق بود"),
+         ("Successful", "با موفقیت انجام شد"),
+-        ("Connected, waiting for image...", "...ارتباط برقرار شد. انتظار برای دریافت تصاویر"),
++        ("Connected, waiting for image...", "اتصال برقرار شد. در انتظار تصویر دستگاه…"),
+         ("Name", "نام"),
+         ("Type", "نوع فایل"),
+         ("Modified", "تاریخ تغییر"),
+@@ -133,19 +133,19 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Insert Ctrl + Alt + Del", "Ctrl + Alt + Del افزودن"),
+         ("Insert Lock", "قفل کردن سیستم"),
+         ("Refresh", "تازه سازی"),
+-        ("ID does not exist", "شناسه وجود ندارد"),
+-        ("Failed to connect to rendezvous server", "اتصال به سرور تولید شناسه انجام نشد"),
++        ("ID does not exist", "دستگاهی با این شناسه پیدا نشد."),
++        ("Failed to connect to rendezvous server", "اتصال به سرور شناسه برقرار نشد."),
+         ("Please try later", "لطفا بعدا تلاش کنید"),
+-        ("Remote desktop is offline", "دسکتاپ راه دور آفلاین است"),
+-        ("Key mismatch", "عدم تطابق کلید"),
+-        ("Timeout", "زمان انتظار به پایان رسید"),
+-        ("Failed to connect to relay server", "سرور وصل نشد Relay به"),
+-        ("Failed to connect via rendezvous server", "اتصال از طریق سرور تولید شناسه انجام نشد"),
+-        ("Failed to connect via relay server", "انجام نشد Relay اتصال از طریق سرور"),
++        ("Remote desktop is offline", "دستگاه مقابل آفلاین است."),
++        ("Key mismatch", "کلید عمومی با کلید سرور مطابقت ندارد."),
++        ("Timeout", "مهلت اتصال به پایان رسید."),
++        ("Failed to connect to relay server", "اتصال به سرور واسط برقرار نشد."),
++        ("Failed to connect via rendezvous server", "برقراری ارتباط از طریق سرور شناسه ممکن نشد."),
++        ("Failed to connect via relay server", "برقراری ارتباط از طریق سرور واسط ممکن نشد."),
+         ("Failed to make direct connection to remote desktop", "اتصال مستقیم به دسکتاپ راه دور انجام نشد"),
+         ("Set Password", "تنظیم رمزعبور"),
+         ("OS Password", "رمز عبور سیستم عامل"),
+-        ("install_tip", "لطفا برنامه را نصب کنید UAC و جلوگیری از خطای RustDesk برای راحتی در استفاده از نرم افزار"),
++        ("install_tip", "برای دسترسی پایدار در ویندوز، فانوس دسک را نصب کنید."),
+         ("Click to upgrade", "برای ارتقا کلیک کنید"),
+         ("Configure", "تنظیم"),
+         ("config_acc", "بدهید \"access\" مجوز RustDesk برای کنترل از راه دور دسکتاپ باید به"),
+@@ -183,7 +183,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Relayed and encrypted connection", "و رمزگذاری شده Relay اتصال از طریق"),
+         ("Direct and unencrypted connection", "اتصال مستقیم و بدون رمزگذاری"),
+         ("Relayed and unencrypted connection", "و رمزگذاری نشده Relay اتصال از طریق"),
+-        ("Enter Remote ID", "شناسه از راه دور را وارد کنید"),
++        ("Enter Remote ID", "شناسهٔ دستگاه مقابل"),
+         ("Enter your password", "رمز عبور خود را وارد کنید"),
+         ("Logging in...", "...در حال ورود"),
+         ("Enable RDP session sharing", "را فعال کنید RDP اشتراک گذاری جلسه"),
+@@ -328,7 +328,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Show Toolbar", "نمایش نوار ابزار"),
+         ("Hide Toolbar", "پنهان کردن نوار ابزار"),
+         ("Direct Connection", "ارتباط مستقیم"),
+-        ("Relay Connection", "Relay ارتباط"),
++        ("Relay Connection", "اتصال از طریق سرور واسط"),
+         ("Secure Connection", "ارتباط امن"),
+         ("Insecure Connection", "ارتباط غیر امن"),
+         ("Scale original", "مقیاس اصلی"),
+diff --git a/src/rendezvous_mediator.rs b/src/rendezvous_mediator.rs
+index b039995..a38d4fa 100644
+--- a/src/rendezvous_mediator.rs
++++ b/src/rendezvous_mediator.rs
+@@ -279,10 +279,6 @@ impl RendezvousMediator {
+             }
+         }
+         crate::hbbs_http::sync::start();
+-        #[cfg(target_os = "windows")]
+-        if crate::platform::is_installed() && crate::is_server() {
+-            crate::updater::start_auto_update();
+-        }
+         check_zombie();
+         let server = new_server();
+         if config::option2bool("stop-service", &Config::get_option("stop-service")) {
