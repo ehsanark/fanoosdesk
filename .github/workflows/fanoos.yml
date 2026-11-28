@@ -95,6 +95,10 @@ jobs:
           $exe = Join-Path $path 'fanoosdesk.exe'
           $key = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\FanoosDesk'
           foreach ($pass in 1..2) {
+            if ($pass -eq 2) {
+              # Build 3 registered InstallLocation but omitted the engine build date.
+              Remove-ItemProperty $key BuildDate
+            }
             $install = Start-Process '.\FanoosDesk-Client-Windows-x64.exe' -ArgumentList '/S' -PassThru -Wait
             if ($install.ExitCode -ne 0) { throw "Install pass $pass failed: $($install.ExitCode)" }
             $entry = Get-ItemProperty $key
