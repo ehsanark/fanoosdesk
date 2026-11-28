@@ -1,0 +1,83 @@
+diff --git a/flutter/lib/desktop/pages/desktop_home_page.dart b/flutter/lib/desktop/pages/desktop_home_page.dart
+index 9fe82c1..6957eba 100644
+--- a/flutter/lib/desktop/pages/desktop_home_page.dart
++++ b/flutter/lib/desktop/pages/desktop_home_page.dart
+@@ -805,20 +805,28 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+     }
+ 
+     if (isWindows && !bind.isDisableInstallation()) {
+-      if (!bind.mainIsInstalled()) {
+-        return buildInstallCard(
+-            "", bind.isOutgoingOnly() ? "" : "install_tip", "Install",
+-            () async {
+-          await rustDeskWinManager.closeAllSubWindows();
+-          bind.mainGotoInstall();
+-        });
+-      } else if (bind.mainIsInstalledLowerVersion()) {
+-        return buildInstallCard(
+-            "Status", "Your installation is lower version.", "Click to upgrade",
+-            () async {
+-          await rustDeskWinManager.closeAllSubWindows();
+-          bind.mainUpdateMe();
+-        });
++      if (!bind.mainIsInstalled() || bind.mainIsInstalledLowerVersion()) {
++        final installed = bind.mainIsInstalled();
++        return Card(
++          margin: const EdgeInsets.only(top: 12),
++          child: Padding(
++            padding: const EdgeInsets.all(16),
++            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
++              Text(installed ? 'ارتقای فانوس دسک' : 'نصب فانوس دسک',
++                  style: Theme.of(context).textTheme.titleSmall),
++              const SizedBox(height: 8),
++              Text(installed ? 'نسخهٔ در حال اجرا از نسخهٔ نصب‌شده جدیدتر است.'
++                             : 'برای نصب روی این رایانه، نصاب ویندوز فانوس دسک را اجرا کنید.'),
++              const SizedBox(height: 12),
++              OutlinedButton.icon(
++                icon: const Icon(Icons.download_rounded),
++                label: const Text('دریافت نصاب ویندوز'),
++                onPressed: () => launchUrl(Uri.parse(
++                    'https://github.com/ehsanark/fanoosdesk/releases/tag/client-windows-build-__FANOOS_RUN__')),
++              ),
++            ]),
++          ),
++        );
+       }
+     } else if (isMacOS) {
+       final isOutgoingOnly = bind.isOutgoingOnly();
+diff --git a/src/platform/windows.rs b/src/platform/windows.rs
+index a3c3d68..7f8f663 100644
+--- a/src/platform/windows.rs
++++ b/src/platform/windows.rs
+@@ -1313,15 +1313,12 @@ fn get_subkey(name: &str, wow: bool) -> String {
+ 
+ fn get_valid_subkey() -> String {
+     let app_name = crate::get_app_name();
+-    let subkey = format!("{HKLM_PREFIX}Software\\{app_name}\\InstallState\\{app_name}");
+-    if !get_reg_of(&subkey, "InstallLocation").is_empty() {
+-        return subkey;
+-    }
+-    let subkey = get_subkey(IS1, false);
+-    if !get_reg_of(&subkey, "InstallLocation").is_empty() {
+-        return subkey;
++    // A RustDesk installation can coexist with the Fanoos NSIS package.
++    let package_key = get_subkey(&app_name, false);
++    if !get_reg_of(&package_key, "InstallLocation").is_empty() {
++        return package_key;
+     }
+-    let subkey = get_subkey(IS1, true);
++    let subkey = format!("{HKLM_PREFIX}Software\\{app_name}\\InstallState\\{app_name}");
+     if !get_reg_of(&subkey, "InstallLocation").is_empty() {
+         return subkey;
+     }
+@@ -3358,7 +3355,9 @@ pub fn install_service() -> bool {
+         log::debug!("{err}");
+         return true;
+     }
+-    run_after_run_cmds(false);
++    if std::env::var_os("FANOOS_NSIS_INSTALL").is_none() {
++        run_after_run_cmds(false);
++    }
+     std::process::exit(0);
+ }
+ 

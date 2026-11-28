@@ -23,6 +23,7 @@ permissions:
       - "build/defaults.py"
       - "build/server-defaults.json"
       - 'build/windows-installer.nsi'
+      - 'build/windows-install.patch'
   pull_request:
     branches:
       - main
@@ -42,6 +43,7 @@ permissions:
       - "build/defaults.py"
       - "build/server-defaults.json"
       - 'build/windows-installer.nsi'
+      - 'build/windows-install.patch'
   workflow_dispatch: {}
 
 jobs:
@@ -70,11 +72,39 @@ jobs:
         working-directory: build
         run: |
           Rename-Item windows-bundle/rustdesk.exe fanoosdesk.exe -ErrorAction Stop
-          & "${env:ProgramFiles(x86)}\NSIS\makensis.exe" windows-installer.nsi
+          $metadata = Get-Content windows-bundle/fanoos-version.rs -Raw
+          if ($metadata -notmatch 'BUILD_DATE: &str = "(\d{4}-\d{2}-\d{2} \d{2}:\d{2})"') { throw "Missing compiled BuildDate" }
+          $date = $Matches[1]
+          if ($metadata -notmatch 'VERSION: &str = "([0-9.]+)"') { throw "Missing compiled version" }
+          $version = $Matches[1]
+          Remove-Item windows-bundle/fanoos-version.rs
+          & "${env:ProgramFiles(x86)}\NSIS\makensis.exe" /INPUTCHARSET UTF8 "/DBUILD_DATE=$date" "/DENGINE_VERSION=$version" "/DFANOOS_BUILD=$env:GITHUB_RUN_NUMBER" windows-installer.nsi
+          if ($LASTEXITCODE -ne 0) { throw "NSIS compilation failed" }
           if (-not (Test-Path "FanoosDesk-Setup-x64.exe")) {
             throw "NSIS output not found"
           }
           Move-Item "FanoosDesk-Setup-x64.exe" "FanoosDesk-Client-Windows-x64.exe" -Force
+
+      - name: Verify fresh install and reinstall on Windows x64
+        shell: pwsh
+        timeout-minutes: 10
+        working-directory: build
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $path = Join-Path $env:ProgramFiles 'FanoosDesk'
+          $exe = Join-Path $path 'fanoosdesk.exe'
+          $key = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\FanoosDesk'
+          foreach ($pass in 1..2) {
+            $install = Start-Process '.\FanoosDesk-Client-Windows-x64.exe' -ArgumentList '/S' -PassThru -Wait
+            if ($install.ExitCode -ne 0) { throw "Install pass $pass failed: $($install.ExitCode)" }
+            $entry = Get-ItemProperty $key
+            if ($entry.InstallLocation -ne $path) { throw "Wrong installation path" }
+            $date = (& $exe --build-date | Out-String).Trim()
+            if (!$date -or $date -ne $entry.BuildDate) { throw "Installed BuildDate differs from executable: '$date' vs '$($entry.BuildDate)'" }
+            if (!(Test-Path "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\FanoosDesk\FanoosDesk.lnk")) { throw "Missing Start menu shortcut" }
+            $svc = Get-Service -Name FanoosDesk
+            $svc.WaitForStatus('Running', [TimeSpan]::FromSeconds(30))
+          }
 
       - uses: actions/upload-artifact@v4
         with:

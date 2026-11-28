@@ -71,7 +71,9 @@ jobs:
         persist-credentials: false
     - name: Load pinned source and Fanoos changes
       shell: bash
-      run: python build/bootstrap.py
+      run: |
+        python build/bootstrap.py
+        sed "s/__FANOOS_RUN__/${GITHUB_RUN_NUMBER}/g" build/windows-install.patch | git apply -
     - name: Restore bridge files
       uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
       with:
@@ -187,6 +189,9 @@ jobs:
       with:
         name: ${{ matrix.job.arch == 'aarch64' && 'topmostwindow-artifacts-ARM64' || 'topmostwindow-artifacts-x64' }}
         path: ./rustdesk
+    - name: Preserve compiled engine version metadata for NSIS
+      shell: pwsh
+      run: Copy-Item src/version.rs rustdesk/fanoos-version.rs -ErrorAction Stop
     - name: Upload unsigned
       if: env.UPLOAD_ARTIFACT == 'true'
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
