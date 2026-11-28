@@ -1,8 +1,16 @@
 diff --git a/flutter/lib/desktop/pages/desktop_home_page.dart b/flutter/lib/desktop/pages/desktop_home_page.dart
-index 9fe82c1..6957eba 100644
+index 9fe82c1..14058b8 100644
 --- a/flutter/lib/desktop/pages/desktop_home_page.dart
 +++ b/flutter/lib/desktop/pages/desktop_home_page.dart
-@@ -805,20 +805,28 @@ class _DesktopHomePageState extends State<DesktopHomePage>
+@@ -10,6 +10,7 @@ import 'package:flutter_hbb/common/widgets/animated_rotation_widget.dart';
+ import 'package:flutter_hbb/common/widgets/custom_password.dart';
+ import 'package:flutter_hbb/consts.dart';
+ import 'package:flutter_hbb/desktop/pages/connection_page.dart';
++import 'install_page.dart' show FanoosInstallPanel;
+ import 'package:flutter_hbb/desktop/pages/desktop_setting_page.dart';
+ import 'package:flutter_hbb/desktop/pages/desktop_tab_page.dart';
+ import 'package:flutter_hbb/models/platform_model.dart';
+@@ -805,20 +806,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
      }
  
      if (isWindows && !bind.isDisableInstallation()) {
@@ -21,30 +29,62 @@ index 9fe82c1..6957eba 100644
 -          bind.mainUpdateMe();
 -        });
 +      if (!bind.mainIsInstalled() || bind.mainIsInstalledLowerVersion()) {
++        return const FanoosInstallPanel();
+       }
+     } else if (isMacOS) {
+       final isOutgoingOnly = bind.isOutgoingOnly();
+diff --git a/flutter/lib/desktop/pages/install_page.dart b/flutter/lib/desktop/pages/install_page.dart
+index fe94b38..46a304d 100644
+--- a/flutter/lib/desktop/pages/install_page.dart
++++ b/flutter/lib/desktop/pages/install_page.dart
+@@ -11,6 +11,38 @@ import 'package:path/path.dart';
+ import 'package:url_launcher/url_launcher_string.dart';
+ import 'package:window_manager/window_manager.dart';
+ 
++class FanoosInstallPanel extends StatelessWidget {
++  const FanoosInstallPanel({Key? key}) : super(key: key);
++  @override
++  Widget build(BuildContext context) {
 +        final installed = bind.mainIsInstalled();
++        final older = installed && bind.mainIsInstalledLowerVersion();
 +        return Card(
 +          margin: const EdgeInsets.only(top: 12),
 +          child: Padding(
 +            padding: const EdgeInsets.all(16),
 +            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-+              Text(installed ? 'ارتقای فانوس دسک' : 'نصب فانوس دسک',
++              Image.asset('assets/icon.png', width: 40, height: 40),
++              const SizedBox(height: 8),
++              Text(older ? 'ارتقای فانوس دسک' : 'نصب فانوس دسک',
 +                  style: Theme.of(context).textTheme.titleSmall),
 +              const SizedBox(height: 8),
-+              Text(installed ? 'نسخهٔ در حال اجرا از نسخهٔ نصب‌شده جدیدتر است.'
++              Text(older ? 'نسخهٔ در حال اجرا از نسخهٔ نصب‌شده جدیدتر است.'
++                             : installed ? 'فانوس دسک روی این رایانه نصب شده است.'
 +                             : 'برای نصب روی این رایانه، نصاب ویندوز فانوس دسک را اجرا کنید.'),
 +              const SizedBox(height: 12),
 +              OutlinedButton.icon(
 +                icon: const Icon(Icons.download_rounded),
 +                label: const Text('دریافت نصاب ویندوز'),
-+                onPressed: () => launchUrl(Uri.parse(
-+                    'https://github.com/ehsanark/fanoosdesk/releases/tag/client-windows-build-__FANOOS_RUN__')),
++                onPressed: () => launchUrlString(
++                    'https://github.com/ehsanark/fanoosdesk/releases/tag/client-windows-build-__FANOOS_RUN__'),
 +              ),
 +            ]),
 +          ),
 +        );
-       }
-     } else if (isMacOS) {
-       final isOutgoingOnly = bind.isOutgoingOnly();
++  }
++}
++
+ class InstallPage extends StatefulWidget {
+   const InstallPage({Key? key}) : super(key: key);
+ 
+@@ -28,7 +60,7 @@ class _InstallPageState extends State<InstallPage> {
+         key: label,
+         label: label,
+         closable: false,
+-        page: _InstallPageBody(
++        page: isWindows ? const FanoosInstallPanel() : _InstallPageBody(
+           key: const ValueKey(label),
+         )));
+   }
 diff --git a/src/platform/windows.rs b/src/platform/windows.rs
 index a3c3d68..7f8f663 100644
 --- a/src/platform/windows.rs
